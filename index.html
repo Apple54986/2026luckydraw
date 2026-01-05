@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>企業級橫式抽獎系統</title>
+    <title>好運在誰家</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root {
@@ -278,7 +278,6 @@
             <span style="margin-right:15px;">顯示秒數：</span>
             <button class="time-btn" onclick="setTimer(3, this)">3秒</button>
             <button class="time-btn active" onclick="setTimer(5, this)">5秒</button>
-            <button class="time-btn" onclick="setTimer(10, this)">10秒</button>
             <button class="time-btn" onclick="setTimer(0, this)">手動關閉</button>
             <button id="btnCloseWinner" class="big-btn" style="padding:10px 30px; font-size:1.2rem; margin-left:30px; background:white; color:black;" onclick="closeWinnerOverlay()">關閉視窗</button>
         </div>
@@ -339,7 +338,7 @@
             if (prizeQueue.length > 0) {
                 document.getElementById('displayCurrentPrize').innerText = `下一抽：${prizeQueue[0].name} (${prizeQueue[0].count}位)`;
             } else {
-                document.getElementById('displayCurrentPrize').innerText = "獎項已全數抽完";
+                document.getElementById('displayCurrentPrize').innerText = "獎項已全數抽完囉";
                 document.getElementById('btnStart').disabled = true;
             }
         }
