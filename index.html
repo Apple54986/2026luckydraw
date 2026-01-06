@@ -3,26 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我要中大獎</title>
+    <title>🏮我要中大獎</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root {
-            --bg-dark: #020617;
-            --sidebar-bg: rgba(255, 255, 255, 0.05);
+            --bg-dark: #8b0000; /* 深紅色基調 */
+            --sidebar-bg: rgba(0, 0, 0, 0.4); /* 半透明黑，透出背景圖 */
             --primary-gold: #fbbf24;
             --text-light: #f8fafc;
         }
 
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            overflow: hidden; background-color: var(--bg-dark);
+            overflow: hidden; 
+            background-color: var(--bg-dark);
             font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
             color: var(--text-light);
         }
 
-        .bg-gradient {
+        /* 🖼 背景圖片設定 */
+        .bg-image {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
+            background-image: url('bg.jpg'); /* 👈 請確保圖檔名為 bg.jpg 並放在同資料夾 */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: -1;
+        }
+
+        /* 加上一層淡淡的濾鏡，讓文字更清楚 */
+        .bg-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.1);
             z-index: -1;
         }
 
@@ -35,16 +47,18 @@
         /* 右側歷史名單 */
         .side-panel {
             background: var(--sidebar-bg);
+            backdrop-filter: blur(5px); /* 毛玻璃效果 */
             border-left: 1px solid rgba(255,255,255,0.1);
             display: flex; flex-direction: column; padding: 20px; overflow: hidden;
         }
         .side-panel h3 {
             text-align: center; color: var(--primary-gold); font-size: 1.5rem;
             margin-bottom: 15px; border-bottom: 2px solid var(--primary-gold); padding-bottom: 10px;
+            text-shadow: 1px 1px 5px rgba(0,0,0,0.5);
         }
         .history-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
         .history-item {
-            background: rgba(255,255,255,0.1); padding: 12px; border-radius: 10px;
+            background: rgba(255,255,255,0.15); padding: 12px; border-radius: 10px;
             border-left: 4px solid var(--primary-gold); animation: slideIn 0.5s ease-out;
         }
         @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
@@ -56,19 +70,20 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;
         }
         .main-title {
-            font-size: 3.5rem; color: var(--primary-gold); margin-bottom: 1rem;
-            text-shadow: 0 0 25px rgba(251, 191, 36, 0.5); font-weight: bold;
+            font-size: 4rem; color: var(--primary-gold); margin-bottom: 1rem;
+            text-shadow: 2px 2px 15px rgba(0, 0, 0, 0.8), 0 0 25px rgba(251, 191, 36, 0.5); 
+            font-weight: bold;
         }
 
         .prize-select {
-            font-size: 2rem; background: rgba(255,255,255,0.1); color: var(--primary-gold);
+            font-size: 2rem; background: rgba(0, 0, 0, 0.5); color: var(--primary-gold);
             padding: 15px 50px; border-radius: 50px; border: 3px solid var(--primary-gold);
             outline: none; cursor: pointer; text-align: center;
         }
 
         .rolling-box {
-            font-size: 6rem; font-weight: 900; height: 150px; color: white;
-            margin-bottom: 2rem; text-shadow: 0 0 40px rgba(255,255,255,0.6);
+            font-size: 7rem; font-weight: 900; height: 180px; color: white;
+            margin-bottom: 2rem; text-shadow: 2px 2px 30px rgba(0,0,0,0.8);
         }
 
         .big-draw-btn {
@@ -83,10 +98,10 @@
         /* 中獎全螢幕 */
         .winner-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(2, 6, 23, 0.98); z-index: 10000;
+            background: rgba(0, 0, 0, 0.9); z-index: 10000;
             display: none; flex-direction: column; justify-content: center; align-items: center; padding: 40px;
         }
-        .winner-title { font-size: 3rem; color: var(--primary-gold); margin-bottom: 30px; font-weight: bold; text-align: center;}
+        .winner-title { font-size: 3.5rem; color: var(--primary-gold); margin-bottom: 30px; font-weight: bold; text-align: center;}
         
         .winner-grid {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -94,12 +109,13 @@
             margin-bottom: 40px; overflow-y: auto; padding: 10px;
         }
         .winner-card {
-            background: linear-gradient(145deg, #1e293b, #0f172a);
+            background: linear-gradient(145deg, #b91c1c, #7f1d1d); /* 喜慶紅卡片 */
             border: 3px solid var(--primary-gold); border-radius: 20px; padding: 25px;
             text-align: center; color: white; animation: cardPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.4);
         }
         @keyframes cardPop { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-        .winner-card .name { font-size: 2.8rem; font-weight: 900; margin-top: 5px; }
+        .winner-card .name { font-size: 3rem; font-weight: 900; margin-top: 5px; text-shadow: 2px 2px 5px rgba(0,0,0,0.3); }
 
         /* 設定彈窗 */
         .modal-overlay {
@@ -109,16 +125,16 @@
         .modal-content { background: white; color: #333; width: 600px; padding: 30px; border-radius: 20px; max-height: 90vh; overflow-y: auto;}
         
         .top-controls { position: absolute; top: 20px; left: 20px; display: flex; gap: 10px; }
-        .control-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+        .control-btn { background: rgba(0,0,0,0.5); border: 1px solid var(--primary-gold); color: var(--primary-gold); padding: 10px 20px; border-radius: 8px; cursor: pointer; }
         
         input, textarea { border: 1px solid #ccc; border-radius: 5px; padding: 8px; }
     </style>
 </head>
 <body>
 
-    <div class="bg-gradient"></div>
+    <div class="bg-image"></div>
+    <div class="bg-overlay"></div>
     
-    <!-- 音效區域 -->
     <audio id="audioTension" loop src="https://assets.mixkit.co/music/preview/mixkit-suspense-percussion-drum-loop-594.mp3"></audio>
     <audio id="audioCheer" src="https://assets.mixkit.co/sfx/preview/mixkit-audience-light-applause-354.mp3"></audio>
 
@@ -129,7 +145,7 @@
                 <button class="control-btn" id="btnSoundToggle" onclick="toggleSound()">🔊 音效：開</button>
             </div>
             
-            <div id="displayEventTitle" class="main-title">年度幸運大抽獎</div>
+            <div id="displayEventTitle" class="main-title">🎉 年度幸運大抽獎 🎉</div>
             
             <div style="margin-bottom: 2rem;">
                 <select id="prizeSelect" class="prize-select">
@@ -137,12 +153,12 @@
                 </select>
             </div>
             
-            <div id="rollingName" class="rolling-box">準備好了嗎！</div>
+            <div id="rollingName" class="rolling-box">恭喜發財</div>
 
             <button id="btnStart" class="big-draw-btn" onclick="handleStartDraw()" disabled>開始抽取</button>
             
-            <div style="margin-top: 40px; font-size: 1.2rem; opacity: 0.7;">
-                待抽總人數：<span id="poolCountDisplay">0</span> 人
+            <div style="margin-top: 40px; font-size: 1.4rem; font-weight: bold; text-shadow: 1px 1px 5px #000;">
+                待抽總人數：<span id="poolCountDisplay" style="color:var(--primary-gold);">0</span> 人
             </div>
         </div>
 
@@ -165,16 +181,16 @@
 
             <div style="display: flex; gap: 15px; margin-bottom:15px;">
                 <div style="flex:1">
-                    <label>滾動秒數 (緊張音效長度)</label><br>
+                    <label>滾動秒數</label><br>
                     <input type="number" id="inputDrawSeconds" value="4" min="1" style="width:80%;">
                 </div>
                 <div style="flex:1">
-                    <label>展示秒數 (0為手動關閉)</label><br>
+                    <label>展示秒數 (0為手動)</label><br>
                     <input type="number" id="inputShowSeconds" value="0" min="0" style="width:80%;">
                 </div>
             </div>
 
-            <label>3. 設定獎項 (名稱與一次抽取人數)</label>
+            <label>3. 設定獎項 (名稱與人數)</label>
             <div style="display:flex; gap:5px; margin-bottom:10px;">
                 <input type="text" id="prizeName" placeholder="如：二獎" style="flex:2;">
                 <input type="number" id="prizeCount" value="1" min="1" style="flex:1;">
@@ -324,7 +340,7 @@
             showWinnerOverlay(winners, prize.name);
             
             isRolling = false;
-            document.getElementById('rollingName').innerText = "🎉中獎名單出爐";
+            document.getElementById('rollingName').innerText = "🎉 恭喜中獎！";
             updatePrizeDropdown();
             updateMainUI();
             fireConfetti();
@@ -336,7 +352,6 @@
             panel.insertAdjacentHTML('afterbegin', itemHtml);
         }
 
-        // 修改這裡：將原本的 WINNER 改為 幸運得主
         function showWinnerOverlay(winners, prizeName) {
             const grid = document.getElementById('winnerGrid');
             const btn = document.getElementById('btnCloseWinner');
@@ -345,7 +360,7 @@
             const fontSize = winners.length > 12 ? '1.8rem' : '2.8rem';
             grid.innerHTML = winners.map((name, index) => `
                 <div class="winner-card" style="animation-delay: ${index * 0.1}s">
-                    <div style="font-size:0.9rem; opacity:0.6;"> 幸運得主 </div>
+                    <div style="font-size:0.9rem; opacity:0.8;">✨ 幸運得主 ✨</div>
                     <div class="name" style="font-size: ${fontSize}">${name}</div>
                 </div>
             `).join('');
@@ -377,8 +392,8 @@
         function fireConfetti() {
             const end = Date.now() + 4000;
             (function frame() {
-                confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#fbbf24', '#ffffff'] });
-                confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#fbbf24', '#ffffff'] });
+                confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#fbbf24', '#ffffff', '#ff0000'] });
+                confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#fbbf24', '#ffffff', '#ff0000'] });
                 if (Date.now() < end) requestAnimationFrame(frame);
             }());
         }
