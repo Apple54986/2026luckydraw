@@ -7,32 +7,10 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root {
-            --bg-dark: #8b0000; /* 深紅色基調 */
-            --sidebar-bg: rgba(0, 0, 0, 0.4); /* 半透明黑，透出背景圖 */
+            --bg-dark: #8b0000;
+            --sidebar-bg: rgba(0, 0, 0, 0.4);
             --primary-gold: #fbbf24;
             --text-light: #f8fafc;
-        }
-
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            overflow: hidden; 
-            background-color: var(--bg-dark);
-            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
-            color: var(--text-light);
-        }
-
-        /* 1. 確保背景圖層在最底下 */
-        .bg-image {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url('./ag.jpg') !important; 
-            background-size: cover;
-            background-position: center center;
-            background-repeat: no-repeat;
-            z-index: -2; 
         }
 
         body, html {
@@ -41,6 +19,13 @@
             background-color: transparent !important; 
             font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
             color: var(--text-light);
+        }
+
+        .bg-image {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('./cg.jpg') !important; 
+            background-size: cover; background-position: center center;
+            z-index: -2; 
         }
 
         .app-container {
@@ -59,7 +44,6 @@
         .side-panel h3 {
             text-align: center; color: var(--primary-gold); font-size: 1.5rem;
             margin-bottom: 15px; border-bottom: 2px solid var(--primary-gold); padding-bottom: 10px;
-            text-shadow: 1px 1px 5px rgba(0,0,0,0.5);
         }
         .history-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
         .history-item {
@@ -100,6 +84,10 @@
         .big-draw-btn:hover:not(:disabled) { transform: scale(1.05); filter: brightness(1.2); }
         .big-draw-btn:disabled { background: #475569; opacity: 0.5; cursor: not-allowed; }
 
+        .top-controls { position: absolute; top: 20px; left: 20px; display: flex; gap: 10px; }
+        .control-btn { background: rgba(0,0,0,0.5); border: 1px solid var(--primary-gold); color: var(--primary-gold); padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+        .download-btn { width: 100%; margin-bottom: 15px; background: rgba(251, 191, 36, 0.2); border: 1px dashed var(--primary-gold); color: var(--primary-gold); padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+
         /* 中獎全螢幕 */
         .winner-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -117,10 +105,7 @@
             background: linear-gradient(145deg, #b91c1c, #7f1d1d);
             border: 3px solid var(--primary-gold); border-radius: 20px; padding: 25px;
             text-align: center; color: white; animation: cardPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
-            box-shadow: 0 0 20px rgba(251, 191, 36, 0.4);
         }
-        @keyframes cardPop { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-        .winner-card .name { font-size: 3rem; font-weight: 900; margin-top: 5px; text-shadow: 2px 2px 5px rgba(0,0,0,0.3); }
 
         /* 設定彈窗 */
         .modal-overlay {
@@ -128,12 +113,6 @@
             background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 5000;
         }
         .modal-content { background: white; color: #333; width: 600px; padding: 30px; border-radius: 20px; max-height: 90vh; overflow-y: auto;}
-        
-        .top-controls { position: absolute; top: 20px; left: 20px; display: flex; gap: 10px; }
-        .control-btn { background: rgba(0,0,0,0.5); border: 1px solid var(--primary-gold); color: var(--primary-gold); padding: 10px 20px; border-radius: 8px; cursor: pointer; }
-        .download-btn { width: 100%; margin-bottom: 15px; background: rgba(251, 191, 36, 0.2); border: 1px dashed var(--primary-gold); color: var(--primary-gold); padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .download-btn:hover { background: var(--primary-gold); color: #000; }
-        
         input, textarea { border: 1px solid #ccc; border-radius: 5px; padding: 8px; }
     </style>
 </head>
@@ -141,8 +120,15 @@
 
     <div class="bg-image"></div>
     
-    <audio id="audioTension" loop src="https://assets.mixkit.co/music/preview/mixkit-suspense-percussion-drum-loop-594.mp3"></audio>
-    <audio id="audioCheer" src="https://assets.mixkit.co/sfx/preview/mixkit-audience-light-applause-354.mp3"></audio>
+    <!-- 音效區域：增加 preload="auto" 與更換穩定的公共資源 -->
+    <!-- 懸疑背景音 -->
+    <audio id="audioTension" loop preload="auto">
+        <source src="https://cdn.pixabay.com/audio/2022/03/15/audio_730628e367.mp3" type="audio/mpeg">
+    </audio>
+    <!-- 中獎歡呼音 -->
+    <audio id="audioCheer" preload="auto">
+        <source src="https://cdn.pixabay.com/audio/2021/08/04/audio_062534f31c.mp3" type="audio/mpeg">
+    </audio>
 
     <div class="app-container">
         <div class="main-content">
@@ -170,48 +156,36 @@
 
         <div class="side-panel">
             <h3>🏆 中獎名單總覽</h3>
-            <!-- 新增的下載按鈕 -->
-            <button class="download-btn" onclick="downloadHistory()">下載 (.txt)</button>
+            <button class="download-btn" onclick="downloadHistory()">下載名單(.txt)</button>
             <div id="historyFull" class="history-list"></div>
         </div>
     </div>
 
-    <!-- 設定彈窗 (內容省略，與原版相同) -->
+    <!-- 設定彈窗 -->
     <div id="modalOverlay" class="modal-overlay">
         <div class="modal-content">
             <h2 style="margin-top:0">⚙️ 抽獎設定</h2>
-            
             <label>1. 活動標題</label><br>
             <input type="text" id="inputEventTitle" value="🎉 年度幸運大抽獎 🎉" style="width:95%; margin-bottom:15px;"><br>
-
             <label>2. 參加者名單 (一人一行)</label><br>
             <textarea id="inputNames" placeholder="請貼上名字..." style="width:95%; height:100px; margin-bottom:15px;"></textarea><br>
-
             <div style="display: flex; gap: 15px; margin-bottom:15px;">
-                <div style="flex:1">
-                    <label>滾動秒數</label><br>
-                    <input type="number" id="inputDrawSeconds" value="4" min="1" style="width:80%;">
-                </div>
-                <div style="flex:1">
-                    <label>展示秒數 (0為手動)</label><br>
-                    <input type="number" id="inputShowSeconds" value="0" min="0" style="width:80%;">
-                </div>
+                <div style="flex:1"><label>滾動秒數</label><br><input type="number" id="inputDrawSeconds" value="4" min="1" style="width:80%;"></div>
+                <div style="flex:1"><label>展示秒數 (0為手動)</label><br><input type="number" id="inputShowSeconds" value="0" min="0" style="width:80%;"></div>
             </div>
-
-            <label>3. 設定獎項 (名稱與人數)</label>
+            <label>3. 設定獎項</label>
             <div style="display:flex; gap:5px; margin-bottom:10px;">
                 <input type="text" id="prizeName" placeholder="如：二獎" style="flex:2;">
                 <input type="number" id="prizeCount" value="1" min="1" style="flex:1;">
-                <button onclick="addPrize()" style="padding: 0 15px;">新增</button>
+                <button onclick="addPrize()">新增</button>
             </div>
             <div id="prizeListDisplay" style="max-height:100px; overflow-y:auto; background:#f0f0f0; padding:10px; border-radius:5px; margin-bottom:15px;"></div>
-
             <button onclick="saveSettings()" style="width:100%; padding:15px; background:#10b981; color:white; border:none; border-radius:10px; font-size:1.2rem; cursor:pointer;">儲存並套用</button>
             <button onclick="toggleModal(false)" style="width:100%; margin-top:10px; background:none; border:none; color:#666; cursor:pointer;">取消</button>
         </div>
     </div>
 
-    <!-- 中獎全螢幕畫面 -->
+    <!-- 中獎全螢幕 -->
     <div id="winnerOverlay" class="winner-overlay">
         <div id="winnerTitle" class="winner-title">🏆 恭喜中獎！</div>
         <div id="winnerGrid" class="winner-grid"></div>
@@ -230,48 +204,22 @@
         const audioTension = document.getElementById('audioTension');
         const audioCheer = document.getElementById('audioCheer');
 
-        // --- 新增的下載功能 ---
-        function downloadHistory() {
-            if (drawnHistory.length === 0) {
-                alert("目前尚無中獎紀錄可供下載！");
-                return;
+        // 初始化音訊，解決瀏覽器自動播放限制
+        function unlockAudio() {
+            if (isSoundEnabled) {
+                // 播放並立刻暫停，讓瀏覽器標記為已解鎖
+                audioTension.play().then(() => audioTension.pause()).catch(e => console.log("Audio unlock wait..."));
+                audioCheer.play().then(() => audioCheer.pause()).catch(e => console.log("Audio unlock wait..."));
             }
-
-            const title = document.getElementById('displayEventTitle').innerText;
-            const now = new Date();
-            const timeString = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${now.getMinutes()}`;
-            
-            // 建立檔案內容
-            let content = `--- ${title} 中獎名單 ---\r\n`;
-            content += `匯出時間：${timeString}\r\n`;
-            content += `------------------------------\r\n\r\n`;
-            
-            // 依據順序排列 (若要依獎項排序可另外實作)
-            drawnHistory.forEach((item, index) => {
-                content += `${index + 1}. 【${item.prize}】 ${item.name}\r\n`;
-            });
-
-            content += `\r\n--- 恭喜以上中獎者 ---`;
-
-            // 建立下載連結
-            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            
-            link.href = url;
-            link.download = `中獎名單_${now.getFullYear()}${now.getMonth()+1}${now.getDate()}.txt`;
-            document.body.appendChild(link);
-            link.click();
-            
-            // 清理
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
         }
 
         function toggleSound() {
             isSoundEnabled = !isSoundEnabled;
             document.getElementById('btnSoundToggle').innerText = isSoundEnabled ? '🔊 音效：開' : '🔇 音效：關';
-            if (!isSoundEnabled) { audioTension.pause(); audioCheer.pause(); }
+            if (!isSoundEnabled) { 
+                audioTension.pause(); 
+                audioCheer.pause(); 
+            }
         }
 
         function toggleModal(show) {
@@ -300,12 +248,12 @@
         }
 
         function saveSettings() {
+            unlockAudio(); // 藉由儲存動作解鎖音訊
             const rawNames = document.getElementById('inputNames').value;
             allNames = rawNames.split('\n').map(n => n.trim()).filter(n => n);
             drawDuration = parseInt(document.getElementById('inputDrawSeconds').value) || 4;
             showDuration = parseInt(document.getElementById('inputShowSeconds').value) || 0;
             document.getElementById('displayEventTitle').innerText = document.getElementById('inputEventTitle').value;
-            
             updatePrizeDropdown();
             updateMainUI();
             toggleModal(false);
@@ -327,6 +275,7 @@
         }
 
         async function handleStartDraw() {
+            unlockAudio(); // 再次確保解鎖
             const select = document.getElementById('prizeSelect');
             const prizeIndex = select.value;
             if (isRolling || prizeIndex === "") return;
@@ -342,9 +291,10 @@
             isRolling = true;
             document.getElementById('btnStart').disabled = true;
 
+            // 播放懸疑音樂
             if (isSoundEnabled) {
                 audioTension.currentTime = 0;
-                audioTension.play();
+                audioTension.play().catch(err => console.error("Tension audio error:", err));
             }
 
             const rollingDisplay = document.getElementById('rollingName');
@@ -364,10 +314,11 @@
         }
 
         function finalizeDraw(prize, pool, prizeIndex) {
+            // 停止懸疑音效，播放歡呼音效
             audioTension.pause();
             if (isSoundEnabled) {
                 audioCheer.currentTime = 0;
-                audioCheer.play();
+                audioCheer.play().catch(err => console.error("Cheer audio error:", err));
             }
 
             const winners = [];
@@ -376,7 +327,6 @@
                 const randomIndex = Math.floor(Math.random() * tempPool.length);
                 const name = tempPool.splice(randomIndex, 1)[0];
                 winners.push(name);
-                
                 const record = { name, prize: prize.name };
                 drawnHistory.push(record);
                 updateHistoryPanel(record);
@@ -384,7 +334,6 @@
 
             prizeMap.splice(prizeIndex, 1);
             showWinnerOverlay(winners, prize.name);
-            
             isRolling = false;
             document.getElementById('rollingName').innerText = "🎉 恭喜中獎！";
             updatePrizeDropdown();
@@ -398,11 +347,21 @@
             panel.insertAdjacentHTML('afterbegin', itemHtml);
         }
 
+        function downloadHistory() {
+            if (drawnHistory.length === 0) { alert("無紀錄可下載"); return; }
+            let content = `--- ${document.getElementById('displayEventTitle').innerText} 中獎名單 ---\r\n\r\n`;
+            drawnHistory.forEach((item, i) => { content += `${i + 1}. 【${item.prize}】 ${item.name}\r\n`; });
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `中獎名單.txt`; a.click();
+            URL.revokeObjectURL(url);
+        }
+
         function showWinnerOverlay(winners, prizeName) {
             const grid = document.getElementById('winnerGrid');
             const btn = document.getElementById('btnCloseWinner');
             document.getElementById('winnerTitle').innerText = `🏆 恭喜獲得 【${prizeName}】`;
-            
             const fontSize = winners.length > 12 ? '1.8rem' : '2.8rem';
             grid.innerHTML = winners.map((name, index) => `
                 <div class="winner-card" style="animation-delay: ${index * 0.1}s">
@@ -410,33 +369,17 @@
                     <div class="name" style="font-size: ${fontSize}">${name}</div>
                 </div>
             `).join('');
-
             document.getElementById('winnerOverlay').style.display = 'flex';
-
-            if (showDuration > 0) {
-                let timeLeft = showDuration;
-                btn.innerText = `確認並關閉 (${timeLeft})`;
-                const timer = setInterval(() => {
-                    timeLeft--;
-                    btn.innerText = `確認並關閉 (${timeLeft})`;
-                    if (timeLeft <= 0) {
-                        clearInterval(timer);
-                        closeWinnerOverlay();
-                    }
-                }, 1000);
-                window.currentShowTimer = timer;
-            } else {
-                btn.innerText = "確認並關閉";
-            }
         }
 
         function closeWinnerOverlay() {
-            if(window.currentShowTimer) clearInterval(window.currentShowTimer);
             document.getElementById('winnerOverlay').style.display = 'none';
+            // 關閉畫面時確保歡呼聲也停掉，回歸安靜狀態準備下一輪
+            audioCheer.pause();
         }
 
         function fireConfetti() {
-            const end = Date.now() + 4000;
+            const end = Date.now() + 3000;
             (function frame() {
                 confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#fbbf24', '#ffffff', '#ff0000'] });
                 confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#fbbf24', '#ffffff', '#ff0000'] });
