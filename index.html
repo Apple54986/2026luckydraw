@@ -60,16 +60,14 @@
             text-shadow: 0 0 25px rgba(251, 191, 36, 0.5); font-weight: bold;
         }
 
-        /* 獎項選擇器：核心功能 */
         .prize-select-container { margin-bottom: 2rem; position: relative; }
         .prize-select {
             font-size: 2rem; background: rgba(255,255,255,0.1); color: var(--primary-gold);
             padding: 15px 50px; border-radius: 50px; border: 3px solid var(--primary-gold);
             outline: none; cursor: pointer; text-align: center; transition: 0.3s;
-            appearance: none; -webkit-appearance: none;
+            appearance: none;
         }
         .prize-select:hover { background: rgba(251, 191, 36, 0.1); box-shadow: 0 0 20px rgba(251, 191, 36, 0.3); }
-        .prize-select option { background: #0f172a; color: white; }
 
         .rolling-box {
             font-size: 6rem; font-weight: 900; height: 150px; color: white;
@@ -104,7 +102,6 @@
             text-align: center; color: white; animation: cardPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
         }
         @keyframes cardPop { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-
         .winner-card .name { font-size: 2.8rem; font-weight: 900; margin-top: 5px; }
 
         /* 設定彈窗 */
@@ -122,11 +119,11 @@
 
     <div class="bg-gradient"></div>
     
-    <audio id="audioTension" loop src="https://assets.mixkit.co/music/preview/mixkit-tense-game-loop-451.mp3"></audio>
+    <!-- 音效區域：更換為更有張力的鼓聲 loop -->
+    <audio id="audioTension" loop src="https://assets.mixkit.co/music/preview/mixkit-suspense-percussion-drum-loop-594.mp3"></audio>
     <audio id="audioCheer" src="https://assets.mixkit.co/sfx/preview/mixkit-audience-light-applause-354.mp3"></audio>
 
     <div class="app-container">
-        <!-- 左側主畫面 -->
         <div class="main-content">
             <div class="top-controls">
                 <button class="control-btn" onclick="toggleModal(true)">⚙️ 抽獎設定</button>
@@ -135,14 +132,13 @@
             
             <div id="displayEventTitle" class="main-title">年度幸運大抽獎</div>
             
-            <!-- 下拉選擇目前要抽的獎項 -->
             <div class="prize-select-container">
                 <select id="prizeSelect" class="prize-select">
                     <option value="">-- 請先設定獎項 --</option>
                 </select>
             </div>
             
-            <div id="rollingName" class="rolling-box">Ready?</div>
+            <div id="rollingName" class="rolling-box">準備就緒</div>
 
             <button id="btnStart" class="big-draw-btn" onclick="handleStartDraw()" disabled>開始抽取</button>
             
@@ -151,7 +147,6 @@
             </div>
         </div>
 
-        <!-- 右側歷史名單 -->
         <div class="side-panel">
             <h3>🏆 中獎名單總覽</h3>
             <div id="historyFull" class="history-list"></div>
@@ -161,8 +156,7 @@
     <!-- 設定彈窗 -->
     <div id="modalOverlay" class="modal-overlay">
         <div class="modal-content">
-            <h2 style="margin-top:0">⚙️ 抽獎設定匯入</h2>
-            
+            <h2 style="margin-top:0">⚙️ 抽獎設定</h2>
             <label>1. 活動標題</label><br>
             <input type="text" id="inputEventTitle" value="🎉 年度幸運大抽獎 🎉" style="width:95%; padding:10px; margin-bottom:15px;"><br>
 
@@ -171,18 +165,18 @@
 
             <label>3. 設定獎項 (點擊新增)</label>
             <div style="display:flex; gap:5px; margin-bottom:10px;">
-                <input type="text" id="prizeName" placeholder="獎項名稱(如：頭獎)" style="flex:2; padding:8px;">
+                <input type="text" id="prizeName" placeholder="獎項名稱(如：二獎)" style="flex:2; padding:8px;">
                 <input type="number" id="prizeCount" value="1" min="1" style="flex:1; padding:8px;">
                 <button onclick="addPrize()">新增</button>
             </div>
             <div id="prizeListDisplay" style="max-height:100px; overflow-y:auto; background:#f0f0f0; padding:10px; border-radius:5px; margin-bottom:15px;"></div>
 
-            <button onclick="saveSettings()" style="width:100%; padding:15px; background:#10b981; color:white; border:none; border-radius:10px; font-size:1.2rem; cursor:pointer;">儲存設定</button>
+            <button onclick="saveSettings()" style="width:100%; padding:15px; background:#10b981; color:white; border:none; border-radius:10px; font-size:1.2rem; cursor:pointer;">儲存設定並開始</button>
             <button onclick="toggleModal(false)" style="width:100%; margin-top:10px; background:none; border:none; color:#666; cursor:pointer;">關閉</button>
         </div>
     </div>
 
-    <!-- 中獎畫面 (批次顯示) -->
+    <!-- 中獎畫面 -->
     <div id="winnerOverlay" class="winner-overlay">
         <div id="winnerTitle" class="winner-title">恭喜中獎！</div>
         <div id="winnerGrid" class="winner-grid"></div>
@@ -190,9 +184,9 @@
     </div>
 
     <script>
-        let allNames = []; // 原始總名單
-        let drawnHistory = []; // 已中獎紀錄
-        let prizeMap = []; // 獎項清單
+        let allNames = [];
+        let drawnHistory = [];
+        let prizeMap = [];
         let isRolling = false;
         let isSoundEnabled = true;
 
@@ -233,10 +227,9 @@
         function saveSettings() {
             const rawNames = document.getElementById('inputNames').value;
             allNames = rawNames.split('\n').map(n => n.trim()).filter(n => n);
-            drawnHistory = []; // 重設中獎紀錄
+            drawnHistory = [];
             document.getElementById('historyFull').innerHTML = '';
             document.getElementById('displayEventTitle').innerText = document.getElementById('inputEventTitle').value;
-            
             updatePrizeDropdown();
             updateMainUI();
             toggleModal(false);
@@ -248,10 +241,7 @@
                 select.innerHTML = '<option value="">-- 請先設定獎項 --</option>';
                 return;
             }
-            // 這裡顯示所有未抽取的獎項
-            select.innerHTML = prizeMap.map((p, i) => `
-                <option value="${i}">${p.name} (抽取 ${p.count} 名)</option>
-            `).join('');
+            select.innerHTML = prizeMap.map((p, i) => `<option value="${i}">${p.name} (抽取 ${p.count} 名)</option>`).join('');
         }
 
         function updateMainUI() {
@@ -268,27 +258,27 @@
             const selectedPrize = prizeMap[prizeIndex];
             const currentPool = allNames.filter(n => !drawnHistory.some(h => h.name === n));
             
-            // 安全檢查：人數是否足夠
             if (currentPool.length < selectedPrize.count) {
-                alert(`名單剩餘人數 (${currentPool.length}) 不足以抽取該獎項 (${selectedPrize.count} 人)！`);
+                alert(`餘額不足抽取 ${selectedPrize.count} 人！`);
                 return;
             }
 
             isRolling = true;
             document.getElementById('btnStart').disabled = true;
 
+            // 啟動鼓聲背景音樂
             if (isSoundEnabled) {
                 audioTension.currentTime = 0;
                 audioTension.play();
             }
 
-            // 滾動動畫效果
             const rollingDisplay = document.getElementById('rollingName');
             let counter = 0;
+            const totalSteps = 50; // 滾動約 4 秒
             const interval = setInterval(() => {
                 rollingDisplay.innerText = currentPool[Math.floor(Math.random() * currentPool.length)];
                 counter++;
-                if (counter > 40) { // 滾動約 3 秒
+                if (counter > totalSteps) {
                     clearInterval(interval);
                     finalizeDraw(selectedPrize, currentPool, prizeIndex);
                 }
@@ -296,13 +286,12 @@
         }
 
         function finalizeDraw(prize, pool, prizeIndex) {
-            audioTension.pause();
+            audioTension.pause(); // 停止緊張音樂
             if (isSoundEnabled) {
                 audioCheer.currentTime = 0;
-                audioCheer.play();
+                audioCheer.play(); // 播放歡呼
             }
 
-            // 核心邏輯：一次抽出該獎項設定的所有人數
             const winners = [];
             const tempPool = [...pool];
             for (let i = 0; i < prize.count; i++) {
@@ -315,13 +304,11 @@
                 updateHistoryPanel(record);
             }
 
-            // 抽取完畢後，將該獎項從選單中移除（或標記為已抽）
             prizeMap.splice(prizeIndex, 1);
-
             showWinnerOverlay(winners, prize.name);
             
             isRolling = false;
-            document.getElementById('rollingName').innerText = "恭喜中獎！";
+            document.getElementById('rollingName').innerText = "🎉 恭喜中獎！";
             updatePrizeDropdown();
             updateMainUI();
             fireConfetti();
@@ -329,29 +316,20 @@
 
         function updateHistoryPanel(record) {
             const panel = document.getElementById('historyFull');
-            const itemHtml = `
-                <div class="history-item">
-                    <div class="p-name">${record.name}</div>
-                    <div class="p-prize">${record.prize}</div>
-                </div>
-            `;
+            const itemHtml = `<div class="history-item"><div class="p-name">${record.name}</div><div class="p-prize">${record.prize}</div></div>`;
             panel.insertAdjacentHTML('afterbegin', itemHtml);
         }
 
         function showWinnerOverlay(winners, prizeName) {
             const grid = document.getElementById('winnerGrid');
             document.getElementById('winnerTitle').innerText = `🏆 恭喜獲得 【${prizeName}】`;
-            
-            // 根據人數自動調整排版 (若人數多，字體稍微縮小)
-            const fontSize = winners.length > 12 ? '1.8rem' : winners.length > 6 ? '2.2rem' : '2.8rem';
-
+            const fontSize = winners.length > 12 ? '1.8rem' : '2.8rem';
             grid.innerHTML = winners.map((name, index) => `
                 <div class="winner-card" style="animation-delay: ${index * 0.1}s">
-                    <div style="font-size:0.9rem; opacity:0.6;">WINNER</div>
+                    <div style="font-size:0.9rem; opacity:0.6;">LUCKY WINNER</div>
                     <div class="name" style="font-size: ${fontSize}">${name}</div>
                 </div>
             `).join('');
-
             document.getElementById('winnerOverlay').style.display = 'flex';
         }
 
@@ -360,7 +338,7 @@
         }
 
         function fireConfetti() {
-            const end = Date.now() + 5000;
+            const end = Date.now() + 4000;
             (function frame() {
                 confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#fbbf24', '#ffffff'] });
                 confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#fbbf24', '#ffffff'] });
