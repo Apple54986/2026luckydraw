@@ -343,7 +343,7 @@
             const fontSize = winners.length > 12 ? '1.8rem' : '2.8rem';
             grid.innerHTML = winners.map((name, index) => `
                 <div class="winner-card" style="animation-delay: ${index * 0.1}s">
-                    <div style="font-size:0.9rem; opacity:0.6;">WINNER</div>
+                    <div style="font-size:0.9rem; opacity:0.6;">幸運得主</div>
                     <div class="name" style="font-size: ${fontSize}">${name}</div>
                 </div>
             `).join('');
