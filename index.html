@@ -118,6 +118,7 @@
 
     <div class="bg-gradient"></div>
     
+    <!-- 音效區域 -->
     <audio id="audioTension" loop src="https://assets.mixkit.co/music/preview/mixkit-suspense-percussion-drum-loop-594.mp3"></audio>
     <audio id="audioCheer" src="https://assets.mixkit.co/sfx/preview/mixkit-audience-light-applause-354.mp3"></audio>
 
@@ -154,7 +155,7 @@
     <!-- 設定彈窗 -->
     <div id="modalOverlay" class="modal-overlay">
         <div class="modal-content">
-            <h2 style="margin-top:0">⚙️ 抽獎設定</h2>
+            <h2 style="margin-top:0">⚙️ 抽獎核心設定</h2>
             
             <label>1. 活動標題</label><br>
             <input type="text" id="inputEventTitle" value="🎉 年度幸運大抽獎 🎉" style="width:95%; margin-bottom:15px;"><br>
@@ -199,8 +200,8 @@
         let prizeMap = [];
         let isRolling = false;
         let isSoundEnabled = true;
-        let drawDuration = 4; // 預設 4 秒
-        let showDuration = 0; // 預設手動關閉
+        let drawDuration = 4;
+        let showDuration = 0;
 
         const audioTension = document.getElementById('audioTension');
         const audioCheer = document.getElementById('audioCheer');
@@ -319,11 +320,11 @@
                 updateHistoryPanel(record);
             }
 
-            prizeMap.splice(prizeIndex, 1); // 抽完即從清單移除
+            prizeMap.splice(prizeIndex, 1);
             showWinnerOverlay(winners, prize.name);
             
             isRolling = false;
-            document.getElementById('rollingName').innerText = "🎉 中獎名單已產生";
+            document.getElementById('rollingName').innerText = "🎉中獎名單出爐";
             updatePrizeDropdown();
             updateMainUI();
             fireConfetti();
@@ -335,6 +336,7 @@
             panel.insertAdjacentHTML('afterbegin', itemHtml);
         }
 
+        // 修改這裡：將原本的 WINNER 改為 幸運得主
         function showWinnerOverlay(winners, prizeName) {
             const grid = document.getElementById('winnerGrid');
             const btn = document.getElementById('btnCloseWinner');
@@ -343,14 +345,13 @@
             const fontSize = winners.length > 12 ? '1.8rem' : '2.8rem';
             grid.innerHTML = winners.map((name, index) => `
                 <div class="winner-card" style="animation-delay: ${index * 0.1}s">
-                    <div style="font-size:0.9rem; opacity:0.6;">幸運得主</div>
+                    <div style="font-size:0.9rem; opacity:0.6;"> 幸運得主 </div>
                     <div class="name" style="font-size: ${fontSize}">${name}</div>
                 </div>
             `).join('');
 
             document.getElementById('winnerOverlay').style.display = 'flex';
 
-            // 處理自動關閉秒數
             if (showDuration > 0) {
                 let timeLeft = showDuration;
                 btn.innerText = `確認並關閉 (${timeLeft})`;
