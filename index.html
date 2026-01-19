@@ -213,7 +213,11 @@
             for (let i = 0; i < prize.count; i++) {
                 const name = tempPool.splice(Math.floor(Math.random() * tempPool.length), 1)[0];
                 winners.push(name);
-                const record = { name, prize: prize.name };
+                const record = { 
+                    name, 
+                    prize: prize.name,
+                    synced: false  // <--- 標記為尚未同步
+                };
                 drawnHistory.push(record);
                 updateHistoryPanel(record);
             }
