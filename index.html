@@ -6,7 +6,7 @@
     <title>🏮我要中大獎</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        /* CSS 部分保持不變，略過以節省空間 */
+        /* CSS 部分保持不變 */
         :root { --bg-dark: #8b0000; --sidebar-bg: rgba(0, 0, 0, 0.4); --primary-gold: #fbbf24; --text-light: #f8fafc; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: transparent !important; font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; color: var(--text-light); }
         .bg-image { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: url('./ag.jpg') !important; background-size: cover; background-position: center center; z-index: -2; }
@@ -42,7 +42,11 @@
     <div class="bg-image"></div>
     
     <!-- 音效區域 -->
-    <!-- ⚠️ 建議將實體檔案改名為 drum_roll.mp3 (底線) 避免空白路徑出錯 -->
+    <!-- 背景音樂 -->
+    <audio id="bgMusic" loop preload="auto">
+        <source src="https://www.bensound.com/bensound-music/bensound-ukulele.mp3" type="audio/mp3">
+    </audio>
+    <!-- 抽獎音效 -->
     <audio id="audioTension" loop preload="auto">
         <source src="drum_roll.mp3" type="audio/mpeg">
     </audio>
@@ -51,7 +55,6 @@
     </audio>
 
     <div class="app-container">
-        <!-- 內容部分維持原樣 -->
         <div class="main-content">
             <div class="top-controls">
                 <button class="control-btn" onclick="toggleModal(true)">⚙️ 抽獎設定</button>
@@ -82,7 +85,7 @@
         </div>
     </div>
 
-    <!-- 設定彈窗與中獎顯示維持原樣，腳本部分有調整 -->
+    <!-- 設定彈窗 -->
     <div id="modalOverlay" class="modal-overlay">
         <div class="modal-content">
             <h2 style="margin-top:0">⚙️ 抽獎設定</h2>
@@ -121,28 +124,33 @@
         let drawDuration = 4;
         let showDuration = 0;
 
+        const bgMusic = document.getElementById('bgMusic');
         const audioTension = document.getElementById('audioTension');
         const audioCheer = document.getElementById('audioCheer');
 
-        // 強化的音訊解鎖功能
-        function unlockAudio() {
-            if (isSoundEnabled) {
-                // 必須由真實點擊事件觸發一次 play()
-                const playPromiseT = audioTension.play();
-                if (playPromiseT !== undefined) {
-                    playPromiseT.then(() => audioTension.pause()).catch(e => console.log("Audio waiting for user..."));
-                }
-                const playPromiseC = audioCheer.play();
-                if (playPromiseC !== undefined) {
-                    playPromiseC.then(() => audioCheer.pause()).catch(e => console.log("Audio waiting for user..."));
+        // 音訊控制：包含背景音樂
+        function toggleSound() {
+            isSoundEnabled = !isSoundEnabled;
+            document.getElementById('btnSoundToggle').innerText = isSoundEnabled ? '🔊 音效：開' : '🔇 音效：關';
+            
+            if (!isSoundEnabled) {
+                bgMusic.pause();
+                audioTension.pause();
+                audioCheer.pause();
+            } else {
+                // 如果開啟開關，且不在抽獎中，則播放背景音樂
+                if (!isRolling) {
+                    bgMusic.play().catch(e => console.log("等待互動播放音樂"));
                 }
             }
         }
 
-        function toggleSound() {
-            isSoundEnabled = !isSoundEnabled;
-            document.getElementById('btnSoundToggle').innerText = isSoundEnabled ? '🔊 音效：開' : '🔇 音效：關';
-            if (!isSoundEnabled) { audioTension.pause(); audioCheer.pause(); }
+        // 解鎖音訊 (瀏覽器要求)
+        function unlockAudio() {
+            if (isSoundEnabled) {
+                // 嘗試播放背景音樂
+                bgMusic.play().catch(e => console.log("Audio waiting for user..."));
+            }
         }
 
         function toggleModal(show) { document.getElementById('modalOverlay').style.display = show ? 'flex' : 'none'; }
@@ -164,7 +172,7 @@
         }
 
         function saveSettings() {
-            unlockAudio(); 
+            unlockAudio(); // 藉由點擊「儲存」來啟動音樂播放
             const rawNames = document.getElementById('inputNames').value;
             allNames = rawNames.split('\n').map(n => n.trim()).filter(n => n);
             drawDuration = parseInt(document.getElementById('inputDrawSeconds').value) || 4;
@@ -188,7 +196,6 @@
         }
 
         async function handleStartDraw() {
-            unlockAudio(); // 再次確保解鎖
             const select = document.getElementById('prizeSelect');
             const prizeIndex = select.value;
             if (isRolling || prizeIndex === "") return;
@@ -204,13 +211,11 @@
             isRolling = true;
             document.getElementById('btnStart').disabled = true;
 
-            // 播放懸疑音樂 (使用 Promise 確保播放成功)
+            // 進入抽獎階段：暫停背景音樂，播放懸疑鼓聲
             if (isSoundEnabled) {
+                bgMusic.pause();
                 audioTension.currentTime = 0;
-                audioTension.volume = 1;
-                audioTension.play().catch(err => {
-                    console.error("無法播放音效，請確認檔案 drum_roll.mp3 是否存在且檔名正確：", err);
-                });
+                audioTension.play().catch(err => console.error("無法播放音效", err));
             }
 
             const rollingDisplay = document.getElementById('rollingName');
@@ -280,7 +285,14 @@
             document.getElementById('winnerOverlay').style.display = 'flex';
         }
 
-        function closeWinnerOverlay() { document.getElementById('winnerOverlay').style.display = 'none'; audioCheer.pause(); }
+        function closeWinnerOverlay() { 
+            document.getElementById('winnerOverlay').style.display = 'none'; 
+            audioCheer.pause(); 
+            // 結束抽獎後，恢復背景音樂播放
+            if (isSoundEnabled) {
+                bgMusic.play().catch(e => console.log("Resume BGM error"));
+            }
+        }
 
         function fireConfetti() {
             const end = Date.now() + 3000;
