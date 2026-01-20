@@ -115,7 +115,7 @@
 
     <script>
         // *** 重要：請在此替換成你部署後的 Google Apps Script 網址 ***
-        const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycbz1bZliNvfHQyZCK9TShGp0s40jMsMNLbqO_khacBLI20fDH92t7XxAPgzZOc0qatM4/exec";
+        const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycbwvrht7owFrVZlDqF1Uu3h-eGQmnz-HqcgGorI34fGvQp7rVMEuG0Dz-k0CRc7a1NzJ_w/exec";
 
         let allNames = [];
         let drawnHistory = [];
@@ -250,7 +250,7 @@
             const a = document.createElement('a'); a.href = url; a.download = `中獎名單.txt`; a.click();
             URL.revokeObjectURL(url);
 
-            if (!CLOUD_API_URL || CLOUD_API_URL.includes("https://script.google.com/macros/s/AKfycbz1bZliNvfHQyZCK9TShGp0s40jMsMNLbqO_khacBLI20fDH92t7XxAPgzZOc0qatM4/exec")) return;
+            if (!CLOUD_API_URL || CLOUD_API_URL.includes("https://script.google.com/macros/s/AKfycbwvrht7owFrVZlDqF1Uu3h-eGQmnz-HqcgGorI34fGvQp7rVMEuG0Dz-k0CRc7a1NzJ_w/exec")) return;
 
             const unsyncedData = drawnHistory.filter(item => !item.synced);
             if (unsyncedData.length === 0) {
