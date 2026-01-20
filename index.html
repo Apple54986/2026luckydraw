@@ -6,7 +6,6 @@
     <title>🏮我要中大獎</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        /* CSS 部分保持不變 */
         :root { --bg-dark: #8b0000; --sidebar-bg: rgba(0, 0, 0, 0.4); --primary-gold: #fbbf24; --text-light: #f8fafc; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: transparent !important; font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; color: var(--text-light); }
         .bg-image { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: url('./ag.jpg') !important; background-size: cover; background-position: center center; z-index: -2; }
@@ -27,8 +26,7 @@
         .big-draw-btn:disabled { background: #475569; opacity: 0.5; cursor: not-allowed; }
         .top-controls { position: absolute; top: 20px; left: 20px; display: flex; gap: 10px; }
         .control-btn { background: rgba(0,0,0,0.5); border: 1px solid var(--primary-gold); color: var(--primary-gold); padding: 10px 20px; border-radius: 8px; cursor: pointer; }
-        .download-btn { width: 100%; margin-bottom: 15px; background: rgba(251, 191, 36, 0.2); border: 1px dashed var(--primary-gold); color: var(--primary-gold); padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .download-btn:active { background: var(--primary-gold); color: black; }
+        .download-btn { width: 100%; margin-bottom: 15px; background: rgba(251, 191, 36, 0.2); border: 1px dashed var(--primary-gold); color: var(--primary-gold); padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         .winner-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 10000; display: none; flex-direction: column; justify-content: center; align-items: center; padding: 40px; }
         .winner-title { font-size: 3.5rem; color: var(--primary-gold); margin-bottom: 30px; font-weight: bold; text-align: center; }
         .winner-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; width: 100%; max-width: 1200px; justify-content: center; margin-bottom: 40px; overflow-y: auto; padding: 10px; }
@@ -42,7 +40,6 @@
 
     <div class="bg-image"></div>
     
-    <!-- 音效區域 -->
     <audio id="bgMusic" loop preload="auto">
         <source src="https://www.bensound.com/bensound-music/bensound-ukulele.mp3" type="audio/mp3">
     </audio>
@@ -79,12 +76,13 @@
 
         <div class="side-panel">
             <h3>🏆 中獎名單總覽</h3>
+            <!-- 下載按鈕改為同時同步雲端 -->
             <button id="btnDownload" class="download-btn" onclick="downloadHistory()">下載名單並同步雲端</button>
             <div id="historyFull" class="history-list"></div>
         </div>
     </div>
 
-    <!-- 設定彈窗與其餘 HTML 結構保持不變 -->
+    <!-- 設定彈窗 -->
     <div id="modalOverlay" class="modal-overlay">
         <div class="modal-content">
             <h2 style="margin-top:0">⚙️ 抽獎設定</h2>
@@ -116,10 +114,10 @@
 
     <script>
         // *** 重要：請在此替換成你部署後的 Google Apps Script 網址 ***
-        const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycbzK_gEl2_cf-5vhMvBAcPsPg_9XRJaicoMQrhw4cY8EfhrecdINbVWtNxRKfKpdotiS/exec";
+        const CLOUD_API_URL = "YOUR_GAS_URL_HERE";
 
         let allNames = [];
-        let drawnHistory = [];
+        let drawnHistory = []; // 結構：{ name, prize, synced: false }
         let prizeMap = [];
         let isRolling = false;
         let isSoundEnabled = true;
@@ -184,43 +182,59 @@
             const select = document.getElementById('prizeSelect');
             const prizeIndex = select.value;
             if (isRolling || prizeIndex === "") return;
+
             const selectedPrize = prizeMap[prizeIndex];
             const currentPool = allNames.filter(n => !drawnHistory.some(h => h.name === n));
-            if (currentPool.length < selectedPrize.count) { alert(`剩餘名單不足！`); return; }
+            
+            if (currentPool.length < selectedPrize.count) {
+                alert(`剩餘名單不足以抽取 ${selectedPrize.count} 人！`);
+                return;
+            }
 
             isRolling = true;
             document.getElementById('btnStart').disabled = true;
-            if (isSoundEnabled) { bgMusic.pause(); audioTension.currentTime = 0; audioTension.play().catch(e=>{}); }
+
+            if (isSoundEnabled) {
+                bgMusic.pause();
+                audioTension.currentTime = 0;
+                audioTension.play().catch(err => console.error("音效播放失敗", err));
+            }
 
             const rollingDisplay = document.getElementById('rollingName');
             const startTime = Date.now();
             const durationMs = drawDuration * 1000;
 
             const runRolling = () => {
-                if (Date.now() - startTime < durationMs) {
+                const elapsed = Date.now() - startTime;
+                if (elapsed < durationMs) {
                     rollingDisplay.innerText = currentPool[Math.floor(Math.random() * currentPool.length)];
                     requestAnimationFrame(runRolling);
-                } else { finalizeDraw(selectedPrize, currentPool, prizeIndex); }
+                } else {
+                    finalizeDraw(selectedPrize, currentPool, prizeIndex);
+                }
             };
             requestAnimationFrame(runRolling);
         }
 
         function finalizeDraw(prize, pool, prizeIndex) {
             audioTension.pause();
-            if (isSoundEnabled) { audioCheer.currentTime = 0; audioCheer.play().catch(e=>{}); }
+            if (isSoundEnabled) {
+                audioCheer.currentTime = 0;
+                audioCheer.play().catch(err => console.error("Cheer audio error:", err));
+            }
+
             const winners = [];
             const tempPool = [...pool];
             for (let i = 0; i < prize.count; i++) {
-                const name = tempPool.splice(Math.floor(Math.random() * tempPool.length), 1)[0];
+                const randomIndex = Math.floor(Math.random() * tempPool.length);
+                const name = tempPool.splice(randomIndex, 1)[0];
                 winners.push(name);
-                const record = { 
-                    name, 
-                    prize: prize.name,
-                    synced: false  // <--- 標記為尚未同步
-                };
+                // 標記 synced: false，代表尚未同步到雲端
+                const record = { name, prize: prize.name, synced: false };
                 drawnHistory.push(record);
                 updateHistoryPanel(record);
             }
+
             prizeMap.splice(prizeIndex, 1);
             showWinnerOverlay(winners, prize.name);
             isRolling = false;
@@ -232,21 +246,18 @@
 
         function updateHistoryPanel(record) {
             const panel = document.getElementById('historyFull');
-            panel.insertAdjacentHTML('afterbegin', `<div class="history-item"><div class="p-name">${record.name}</div><div class="p-prize">${record.prize}</div></div>`);
+            const itemHtml = `<div class="history-item"><div class="p-name">${record.name}</div><div class="p-prize">${record.prize}</div></div>`;
+            panel.insertAdjacentHTML('afterbegin', itemHtml);
         }
 
         // 修改後的下載與同步功能
         async function downloadHistory() {
             if (drawnHistory.length === 0) { alert("無紀錄可下載"); return; }
+            
             const btn = document.getElementById('btnDownload');
             const eventTitle = document.getElementById('displayEventTitle').innerText;
 
-async function downloadHistory() {
-            if (drawnHistory.length === 0) { alert("無紀錄可下載"); return; }
-            const btn = document.getElementById('btnDownload');
-            const eventTitle = document.getElementById('displayEventTitle').innerText;
-
-            // --- 1. 本地下載 TXT (始終下載完整的歷史名單，這部分不變) ---
+            // 1. 本地下載 TXT (每次下載都是全部歷史紀錄)
             let content = `--- ${eventTitle} 中獎名單 ---\r\n\r\n`;
             drawnHistory.forEach((item, i) => { content += `${i + 1}. 【${item.prize}】 ${item.name}\r\n`; });
             const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
@@ -254,40 +265,37 @@ async function downloadHistory() {
             const a = document.createElement('a'); a.href = url; a.download = `中獎名單.txt`; a.click();
             URL.revokeObjectURL(url);
 
-            // --- 2. 同步到雲端 (過濾掉已同步的名單) ---
-            if (CLOUD_API_URL === "" || CLOUD_API_URL.includes("https://script.google.com/macros/s/AKfycbzK_gEl2_cf-5vhMvBAcPsPg_9XRJaicoMQrhw4cY8EfhrecdINbVWtNxRKfKpdotiS/exec")) {
+            // 2. 同步到雲端 (只同步尚未上傳的新名單)
+            if (!CLOUD_API_URL || CLOUD_API_URL === "YOUR_GAS_URL_HERE") {
                 console.log("未設定雲端 API 網址，僅執行本地下載。");
                 return;
             }
 
-            // 【關鍵修改】：找出那些 synced 屬性不是 true 的資料
+            // 過濾出尚未同步的名單
             const unsyncedData = drawnHistory.filter(item => item.synced === false);
 
-            // 如果沒有新資料，就不要再傳送給 Google，避免重複
             if (unsyncedData.length === 0) {
-                alert("✅ TXT 已下載！\n(雲端名單已是最新，無需重複同步)");
+                alert("✅ TXT 已下載！(雲端名單已是最新，無需重複同步)");
                 return;
             }
 
-            btn.innerText = "同步中...";
+            btn.innerText = "雲端同步中...";
             btn.disabled = true;
 
             try {
-                // 使用 fetch 傳送資料
                 await fetch(CLOUD_API_URL, {
                     method: 'POST',
-                    mode: 'no-cors', 
+                    mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         title: eventTitle,
-                        winners: unsyncedData // 【關鍵修改】：只傳送「尚未同步」的新名單
+                        winners: unsyncedData // 只把新名單傳上去
                     })
                 });
-
-                // 【關鍵修改】：傳送成功後，將這些名單標記為已同步
-                unsyncedData.forEach(item => item.synced = true);
                 
-                alert(`✅ 下載成功！\n雲端已新增 ${unsyncedData.length} 筆名單。`);
+                // 成功後將狀態標記為已同步
+                unsyncedData.forEach(item => item.synced = true);
+                alert(`✅ 下載成功！\n新增 ${unsyncedData.length} 筆名單至雲端。`);
             } catch (error) {
                 console.error("Cloud Sync Error:", error);
                 alert("❌ 本地下載成功，但雲端同步失敗。");
@@ -296,17 +304,21 @@ async function downloadHistory() {
                 btn.disabled = false;
             }
         }
+
         function showWinnerOverlay(winners, prizeName) {
             const grid = document.getElementById('winnerGrid');
             document.getElementById('winnerTitle').innerText = `🏆 恭喜獲得 【${prizeName}】`;
-            grid.innerHTML = winners.map((name, index) => `<div class="winner-card" style="animation-delay: ${index * 0.1}s"><div style="font-size:0.9rem; opacity:0.8;">幸運得主</div><div class="name" style="font-size: 2rem">${name}</div></div>`).join('');
+            const fontSize = winners.length > 12 ? '1.8rem' : '2.8rem';
+            grid.innerHTML = winners.map((name, index) => `<div class="winner-card" style="animation-delay: ${index * 0.1}s"><div style="font-size:0.9rem; opacity:0.8;">幸運得主</div><div class="name" style="font-size: ${fontSize}">${name}</div></div>`).join('');
             document.getElementById('winnerOverlay').style.display = 'flex';
         }
 
         function closeWinnerOverlay() { 
             document.getElementById('winnerOverlay').style.display = 'none'; 
             audioCheer.pause(); 
-            if (isSoundEnabled) bgMusic.play().catch(e => {}); 
+            if (isSoundEnabled) {
+                bgMusic.play().catch(e => console.log("Resume BGM error"));
+            }
         }
 
         function fireConfetti() {
