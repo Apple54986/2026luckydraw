@@ -241,7 +241,12 @@
             const btn = document.getElementById('btnDownload');
             const eventTitle = document.getElementById('displayEventTitle').innerText;
 
-            // 1. 本地下載 TXT
+async function downloadHistory() {
+            if (drawnHistory.length === 0) { alert("無紀錄可下載"); return; }
+            const btn = document.getElementById('btnDownload');
+            const eventTitle = document.getElementById('displayEventTitle').innerText;
+
+            // --- 1. 本地下載 TXT (始終下載完整的歷史名單，這部分不變) ---
             let content = `--- ${eventTitle} 中獎名單 ---\r\n\r\n`;
             drawnHistory.forEach((item, i) => { content += `${i + 1}. 【${item.prize}】 ${item.name}\r\n`; });
             const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
@@ -249,9 +254,18 @@
             const a = document.createElement('a'); a.href = url; a.download = `中獎名單.txt`; a.click();
             URL.revokeObjectURL(url);
 
-            // 2. 同步到雲端 (Google Spreadsheet)
-            if (CLOUD_API_URL === "YOUR_GAS_URL_HERE") {
+            // --- 2. 同步到雲端 (過濾掉已同步的名單) ---
+            if (CLOUD_API_URL === "" || CLOUD_API_URL.includes("https://script.google.com/macros/s/AKfycbzK_gEl2_cf-5vhMvBAcPsPg_9XRJaicoMQrhw4cY8EfhrecdINbVWtNxRKfKpdotiS/exec")) {
                 console.log("未設定雲端 API 網址，僅執行本地下載。");
+                return;
+            }
+
+            // 【關鍵修改】：找出那些 synced 屬性不是 true 的資料
+            const unsyncedData = drawnHistory.filter(item => item.synced === false);
+
+            // 如果沒有新資料，就不要再傳送給 Google，避免重複
+            if (unsyncedData.length === 0) {
+                alert("✅ TXT 已下載！\n(雲端名單已是最新，無需重複同步)");
                 return;
             }
 
@@ -259,16 +273,21 @@
             btn.disabled = true;
 
             try {
-                const response = await fetch(CLOUD_API_URL, {
+                // 使用 fetch 傳送資料
+                await fetch(CLOUD_API_URL, {
                     method: 'POST',
-                    mode: 'no-cors', // 解決跨域問題
+                    mode: 'no-cors', 
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         title: eventTitle,
-                        winners: drawnHistory
+                        winners: unsyncedData // 【關鍵修改】：只傳送「尚未同步」的新名單
                     })
                 });
-                alert("✅ 下載成功，名單已同步至雲端試算表！");
+
+                // 【關鍵修改】：傳送成功後，將這些名單標記為已同步
+                unsyncedData.forEach(item => item.synced = true);
+                
+                alert(`✅ 下載成功！\n雲端已新增 ${unsyncedData.length} 筆名單。`);
             } catch (error) {
                 console.error("Cloud Sync Error:", error);
                 alert("❌ 本地下載成功，但雲端同步失敗。");
@@ -277,7 +296,6 @@
                 btn.disabled = false;
             }
         }
-
         function showWinnerOverlay(winners, prizeName) {
             const grid = document.getElementById('winnerGrid');
             document.getElementById('winnerTitle').innerText = `🏆 恭喜獲得 【${prizeName}】`;
