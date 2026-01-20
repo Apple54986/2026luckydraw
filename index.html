@@ -40,6 +40,7 @@
 
     <div class="bg-image"></div>
     
+    <!-- 音效區域 -->
     <audio id="bgMusic" loop preload="auto">
         <source src="https://www.bensound.com/bensound-music/bensound-ukulele.mp3" type="audio/mp3">
     </audio>
@@ -76,7 +77,7 @@
 
         <div class="side-panel">
             <h3>🏆 中獎名單總覽</h3>
-            <!-- 下載按鈕改為同時同步雲端 -->
+            <!-- 確保這裡有 id="btnDownload" -->
             <button id="btnDownload" class="download-btn" onclick="downloadHistory()">下載名單並同步雲端</button>
             <div id="historyFull" class="history-list"></div>
         </div>
@@ -114,10 +115,10 @@
 
     <script>
         // *** 重要：請在此替換成你部署後的 Google Apps Script 網址 ***
-        const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycbzrRk-GeZAW3DbovyMncEprkCgCEek3E68nP3HxXSWPKqetY1OnN3ztUUh5oG2NKZ9r/exec";
+        const CLOUD_API_URL = "https://script.google.com/macros/s/你的網址/exec";
 
         let allNames = [];
-        let drawnHistory = []; // 結構：{ name, prize, synced: false }
+        let drawnHistory = [];
         let prizeMap = [];
         let isRolling = false;
         let isSoundEnabled = true;
@@ -131,12 +132,20 @@
         function toggleSound() {
             isSoundEnabled = !isSoundEnabled;
             document.getElementById('btnSoundToggle').innerText = isSoundEnabled ? '🔊 音效：開' : '🔇 音效：關';
-            if (!isSoundEnabled) { bgMusic.pause(); audioTension.pause(); audioCheer.pause(); } 
-            else { if (!isRolling) bgMusic.play().catch(e => {}); }
+            if (!isSoundEnabled) { 
+                bgMusic.pause(); audioTension.pause(); audioCheer.pause(); 
+            } else { 
+                if (!isRolling) bgMusic.play().catch(e => {}); 
+            }
         }
 
-        function unlockAudio() { if (isSoundEnabled) bgMusic.play().catch(e => {}); }
-        function toggleModal(show) { document.getElementById('modalOverlay').style.display = show ? 'flex' : 'none'; }
+        function unlockAudio() { 
+            if (isSoundEnabled) bgMusic.play().catch(e => {}); 
+        }
+
+        function toggleModal(show) { 
+            document.getElementById('modalOverlay').style.display = show ? 'flex' : 'none'; 
+        }
 
         function addPrize() {
             const name = document.getElementById('prizeName').value.trim();
@@ -182,59 +191,39 @@
             const select = document.getElementById('prizeSelect');
             const prizeIndex = select.value;
             if (isRolling || prizeIndex === "") return;
-
             const selectedPrize = prizeMap[prizeIndex];
             const currentPool = allNames.filter(n => !drawnHistory.some(h => h.name === n));
-            
-            if (currentPool.length < selectedPrize.count) {
-                alert(`剩餘名單不足以抽取 ${selectedPrize.count} 人！`);
-                return;
-            }
+            if (currentPool.length < selectedPrize.count) { alert(`剩餘名單不足！`); return; }
 
             isRolling = true;
             document.getElementById('btnStart').disabled = true;
-
-            if (isSoundEnabled) {
-                bgMusic.pause();
-                audioTension.currentTime = 0;
-                audioTension.play().catch(err => console.error("音效播放失敗", err));
-            }
+            if (isSoundEnabled) { bgMusic.pause(); audioTension.currentTime = 0; audioTension.play().catch(e=>{}); }
 
             const rollingDisplay = document.getElementById('rollingName');
             const startTime = Date.now();
             const durationMs = drawDuration * 1000;
 
             const runRolling = () => {
-                const elapsed = Date.now() - startTime;
-                if (elapsed < durationMs) {
+                if (Date.now() - startTime < durationMs) {
                     rollingDisplay.innerText = currentPool[Math.floor(Math.random() * currentPool.length)];
                     requestAnimationFrame(runRolling);
-                } else {
-                    finalizeDraw(selectedPrize, currentPool, prizeIndex);
-                }
+                } else { finalizeDraw(selectedPrize, currentPool, prizeIndex); }
             };
             requestAnimationFrame(runRolling);
         }
 
         function finalizeDraw(prize, pool, prizeIndex) {
             audioTension.pause();
-            if (isSoundEnabled) {
-                audioCheer.currentTime = 0;
-                audioCheer.play().catch(err => console.error("Cheer audio error:", err));
-            }
-
+            if (isSoundEnabled) { audioCheer.currentTime = 0; audioCheer.play().catch(e=>{}); }
             const winners = [];
             const tempPool = [...pool];
             for (let i = 0; i < prize.count; i++) {
-                const randomIndex = Math.floor(Math.random() * tempPool.length);
-                const name = tempPool.splice(randomIndex, 1)[0];
+                const name = tempPool.splice(Math.floor(Math.random() * tempPool.length), 1)[0];
                 winners.push(name);
-                // 標記 synced: false，代表尚未同步到雲端
-                const record = { name, prize: prize.name, synced: false };
+                const record = { name: name, prize: prize.name, synced: false };
                 drawnHistory.push(record);
                 updateHistoryPanel(record);
             }
-
             prizeMap.splice(prizeIndex, 1);
             showWinnerOverlay(winners, prize.name);
             isRolling = false;
@@ -246,18 +235,14 @@
 
         function updateHistoryPanel(record) {
             const panel = document.getElementById('historyFull');
-            const itemHtml = `<div class="history-item"><div class="p-name">${record.name}</div><div class="p-prize">${record.prize}</div></div>`;
-            panel.insertAdjacentHTML('afterbegin', itemHtml);
+            panel.insertAdjacentHTML('afterbegin', `<div class="history-item"><div class="p-name">${record.name}</div><div class="p-prize">${record.prize}</div></div>`);
         }
 
-        // 修改後的下載與同步功能
         async function downloadHistory() {
             if (drawnHistory.length === 0) { alert("無紀錄可下載"); return; }
-            
             const btn = document.getElementById('btnDownload');
             const eventTitle = document.getElementById('displayEventTitle').innerText;
 
-            // 1. 本地下載 TXT (每次下載都是全部歷史紀錄)
             let content = `--- ${eventTitle} 中獎名單 ---\r\n\r\n`;
             drawnHistory.forEach((item, i) => { content += `${i + 1}. 【${item.prize}】 ${item.name}\r\n`; });
             const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
@@ -265,21 +250,15 @@
             const a = document.createElement('a'); a.href = url; a.download = `中獎名單.txt`; a.click();
             URL.revokeObjectURL(url);
 
-            // 2. 同步到雲端 (只同步尚未上傳的新名單)
-            if (!CLOUD_API_URL || CLOUD_API_URL === "https://script.google.com/macros/s/AKfycbzrRk-GeZAW3DbovyMncEprkCgCEek3E68nP3HxXSWPKqetY1OnN3ztUUh5oG2NKZ9r/exec") {
-                console.log("未設定雲端 API 網址，僅執行本地下載。");
-                return;
-            }
+            if (!CLOUD_API_URL || CLOUD_API_URL.includes("你的網址")) return;
 
-            // 過濾出尚未同步的名單
-            const unsyncedData = drawnHistory.filter(item => item.synced === false);
-
+            const unsyncedData = drawnHistory.filter(item => !item.synced);
             if (unsyncedData.length === 0) {
-                alert("✅ TXT 已下載！(雲端名單已是最新，無需重複同步)");
+                alert("✅ TXT 已下載！\n(雲端名單已是最新，無需重複同步)");
                 return;
             }
 
-            btn.innerText = "雲端同步中...";
+            btn.innerText = "同步雲端中...";
             btn.disabled = true;
 
             try {
@@ -287,18 +266,12 @@
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        title: eventTitle,
-                        winners: unsyncedData // 只把新名單傳上去
-                    })
+                    body: JSON.stringify({ title: eventTitle, winners: unsyncedData })
                 });
-                
-                // 成功後將狀態標記為已同步
                 unsyncedData.forEach(item => item.synced = true);
-                alert(`✅ 下載成功！\n新增 ${unsyncedData.length} 筆名單至雲端。`);
+                alert(`✅ 下載成功！\n雲端已新增 ${unsyncedData.length} 筆新名單。`);
             } catch (error) {
-                console.error("Cloud Sync Error:", error);
-                alert("❌ 本地下載成功，但雲端同步失敗。");
+                alert("❌ 同步雲端失敗。");
             } finally {
                 btn.innerText = "下載名單並同步雲端";
                 btn.disabled = false;
@@ -308,17 +281,14 @@
         function showWinnerOverlay(winners, prizeName) {
             const grid = document.getElementById('winnerGrid');
             document.getElementById('winnerTitle').innerText = `🏆 恭喜獲得 【${prizeName}】`;
-            const fontSize = winners.length > 12 ? '1.8rem' : '2.8rem';
-            grid.innerHTML = winners.map((name, index) => `<div class="winner-card" style="animation-delay: ${index * 0.1}s"><div style="font-size:0.9rem; opacity:0.8;">幸運得主</div><div class="name" style="font-size: ${fontSize}">${name}</div></div>`).join('');
+            grid.innerHTML = winners.map((name, index) => `<div class="winner-card" style="animation-delay: ${index * 0.1}s"><div style="font-size:0.9rem; opacity:0.8;">幸運得主</div><div class="name" style="font-size: 2rem">${name}</div></div>`).join('');
             document.getElementById('winnerOverlay').style.display = 'flex';
         }
 
         function closeWinnerOverlay() { 
             document.getElementById('winnerOverlay').style.display = 'none'; 
             audioCheer.pause(); 
-            if (isSoundEnabled) {
-                bgMusic.play().catch(e => console.log("Resume BGM error"));
-            }
+            if (isSoundEnabled) bgMusic.play().catch(e => {}); 
         }
 
         function fireConfetti() {
