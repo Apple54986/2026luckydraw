@@ -114,7 +114,7 @@
 
     <script>
         // *** 重要：請在此替換成你部署後的 Google Apps Script 網址 ***
-        const CLOUD_API_URL = "YOUR_GAS_URL_HERE";
+        const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycbzrRk-GeZAW3DbovyMncEprkCgCEek3E68nP3HxXSWPKqetY1OnN3ztUUh5oG2NKZ9r/exec";
 
         let allNames = [];
         let drawnHistory = []; // 結構：{ name, prize, synced: false }
@@ -266,7 +266,7 @@
             URL.revokeObjectURL(url);
 
             // 2. 同步到雲端 (只同步尚未上傳的新名單)
-            if (!CLOUD_API_URL || CLOUD_API_URL === "YOUR_GAS_URL_HERE") {
+            if (!CLOUD_API_URL || CLOUD_API_URL === "https://script.google.com/macros/s/AKfycbzrRk-GeZAW3DbovyMncEprkCgCEek3E68nP3HxXSWPKqetY1OnN3ztUUh5oG2NKZ9r/exec") {
                 console.log("未設定雲端 API 網址，僅執行本地下載。");
                 return;
             }
